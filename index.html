@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Sucursal</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Dashboard — <span id="branchName">Sucursal</span></h1>
+    <div class="badges">
+      <span class="badge" id="todayDate"></span>
+      <span class="badge" id="branchId"></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="cards">
+      <div class="card">
+        <h2>Ventas de hoy</h2>
+        <p class="metric" id="salesTotal">$0</p>
+        <p class="sub">Tickets: <span id="ticketsCount">0</span> — Ticket promedio: <span id="avgTicket">$0</span></p>
+        <p class="sub">Por origen: <span id="mixOrigin"></span></p>
+      </div>
+      <div class="card">
+        <h2>Stock crítico</h2>
+        <ul id="lowStockList"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="sendReportBtn">Enviar reporte ahora</button>
+    <span id="status"></span>
+  </footer>
+
+<script src="/dashboard.js"></script>
+</body>
+</html>
