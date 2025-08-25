@@ -61,3 +61,43 @@ CREATE TABLE IF NOT EXISTS payments (
   ref TEXT,
   FOREIGN KEY(sale_id) REFERENCES sales(id)
 );
+
+-- ===== Chat =====
+
+-- Chat threads
+CREATE TABLE IF NOT EXISTS chat_threads (
+  id TEXT PRIMARY KEY,
+  branch_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'channel' -- 'channel' | 'dm'
+);
+
+-- Thread participants
+CREATE TABLE IF NOT EXISTS chat_participants (
+  thread_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  role TEXT,
+  PRIMARY KEY (thread_id, user_id),
+  FOREIGN KEY (thread_id) REFERENCES chat_threads(id)
+);
+
+-- Messages
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id TEXT PRIMARY KEY,
+  thread_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT,
+  body TEXT,
+  attachments_json TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (thread_id) REFERENCES chat_threads(id)
+);
+
+-- Read receipts
+CREATE TABLE IF NOT EXISTS chat_receipts (
+  message_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  seen_at TEXT NOT NULL,
+  PRIMARY KEY (message_id, user_id),
+  FOREIGN KEY (message_id) REFERENCES chat_messages(id)
+);

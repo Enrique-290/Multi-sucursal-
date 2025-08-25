@@ -29,3 +29,18 @@ INSERT OR REPLACE INTO payments (id,sale_id,dt,method,amount,ref) VALUES
 ('PA-001','V-001',datetime('now','localtime'),'Efectivo',70,''),
 ('PA-002','V-002',datetime('now','localtime'),'Efectivo',80,''),
 ('PA-003','V-003',datetime('now','localtime'),'Transferencia',220,'TR-789');
+
+-- Chat seed
+INSERT OR REPLACE INTO chat_threads (id,branch_id,name,type) VALUES
+('T-GENERAL','SUC-01','General','channel'),
+('T-FARMACIA','SUC-01','Farmacia','channel'),
+('T-CONSULTORIO','SUC-01','Consultorio','channel'),
+('T-LAB','SUC-01','Laboratorio','channel');
+
+INSERT OR IGNORE INTO chat_participants (thread_id,user_id,role) VALUES
+('T-GENERAL','U-001','Admin'),
+('T-GENERAL','U-002','Cajero'),
+('T-GENERAL','U-003','Medico');
+
+INSERT OR REPLACE INTO chat_messages (id,thread_id,user_id,user_name,body,attachments_json,created_at) VALUES
+('MSG-001','T-GENERAL','U-001','Ana López','Bienvenidos al canal #General',NULL,datetime('now','localtime'));

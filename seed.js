@@ -7,4 +7,4 @@ const seed = fs.readFileSync('./seed.sql','utf-8');
 db.exec(schema);
 db.exec(seed);
 
-console.log('DB inicializada con schema y datos de prueba.');
+console.log('DB inicializada con schema, datos de ejemplo y chat.');

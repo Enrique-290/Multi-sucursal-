@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat — Sucursal</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .chat { display:grid; grid-template-columns: 260px 1fr; height: calc(100vh - 80px); gap:12px; }
+    .sidebar { background:#141418; border:1px solid #222; border-radius:14px; padding:10px; overflow:auto }
+    .room { padding:8px 10px; border-radius:10px; cursor:pointer; border:1px solid #25252a; margin-bottom:6px }
+    .room.active { background:#1a1a20 }
+    .panel { display:flex; flex-direction:column; background:#141418; border:1px solid #222; border-radius:14px; }
+    .messages { flex:1; overflow:auto; padding:12px }
+    .msg { margin-bottom:10px }
+    .msg .meta { color:#bdbdc7; font-size:12px }
+    .composer { display:flex; gap:8px; padding:10px; border-top:1px solid #222 }
+    .composer input { flex:1; padding:10px; border-radius:10px; border:1px solid #333; background:#0f0f12; color:#f0f0f0 }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chat — <span id="branchName">Sucursal</span></h1>
+    <div class="badges">
+      <a class="badge" href="/index.html" style="text-decoration:none;color:inherit">⬅️ Dashboard</a>
+      <span class="badge" id="userNameBadge"></span>
+      <span class="badge" id="branchId"></span>
+    </div>
+  </header>
+
+  <main class="chat">
+    <aside class="sidebar">
+      <h3>Canales</h3>
+      <div id="rooms"></div>
+    </aside>
+
+    <section class="panel">
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <input id="messageInput" placeholder="Escribe un mensaje...">
+        <button id="sendBtn">Enviar</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/chat.js"></script>
+</body>
+</html>

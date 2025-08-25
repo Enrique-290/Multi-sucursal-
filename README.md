@@ -1,6 +1,6 @@
-# Farmacia Multisucursal — Kit HTML + Node (Express + SQLite)
+# Farmacia Multisucursal — Kit HTML + Node (Express + SQLite) con **Chat**
 
-**Objetivo:** cada sucursal corre su propio mini-servidor (DB independiente). Mide ventas del día, detecta stock crítico y **envía reporte diario por email** automáticamente a la hora configurada (CDMX).
+**Objetivo:** cada sucursal corre su propio mini-servidor (DB independiente). Mide ventas del día, detecta stock crítico y **envía reporte diario por email** automáticamente. Incluye **chat en tiempo real** por canales (General, Farmacia, Consultorio, Lab).
 
 ## 1) Requisitos
 - Node.js 18+
@@ -12,42 +12,45 @@
 npm i
 cp .env.example .env
 # Edita .env (BRANCH_ID, SMTP, REPORT_EMAILS, API_KEY, etc.)
-npm run seed     # crea DB y datos ejemplo
+npm run seed     # crea DB y datos ejemplo (incluye canales de chat)
 npm start
 ```
-Visita: http://localhost:3000
+Visita: http://localhost:3000  (dashboard)  
+Chat: http://localhost:3000/chat.html
 
-## 3) ¿Qué hace?
+## 3) API y funciones
 - `/api/stats/today` : ventas totales, tickets, ticket promedio y mix por origen.
 - `/api/stock/low`   : productos con stock <= mínimo.
 - `/api/email/daily` : envía reporte al correo (requiere header `x-api-key`).  
 - **CRON diario** (21:00 CDMX por defecto) envía el correo sin intervención.
 
+### Chat (Socket.IO, persistencia SQLite)
+- Página: `/chat.html` (UI simple).
+- Endpoints:
+  - `GET /api/chat/threads`
+  - `GET /api/chat/history/:thread_id`
+- Eventos Socket.IO:
+  - `join` { thread_id }
+  - `chat:send` { thread_id, user_id, user_name, body }
+  - `chat:new` (broadcast a los clientes del canal)
+- Seed crea canales: `General`, `Farmacia`, `Consultorio`, `Laboratorio`.
+
 ## 4) Esquema de datos
-- `products` : catálogo (min_stock controla alertas).
-- `inventory_moves` : entradas (IN) y salidas (OUT).
-- `sales` + `sale_lines` + `payments` : ventas por origen (Farmacia/Consultorio/Lab).
+- `products` / `inventory_moves` / `sales` / `sale_lines` / `payments`.
+- `chat_threads` / `chat_participants` / `chat_messages` / `chat_receipts`.
 
-> El stock se calcula como **IN - OUT** por producto.
+> Stock = **IN - OUT** por producto.
 
-## 5) Flujo recomendado
-- **Compra**: inserta `inventory_moves` tipo `IN`.
-- **Venta**: inserta `sales`, `sale_lines` y `inventory_moves` tipo `OUT` con referencia de la venta.
-- **Reporte diario**: se envía automático (CRON) y también manual desde botón del dashboard.
+## 5) Multi-sucursal
+- Cada sucursal despliega este mismo proyecto con su propio `.env` y BD.
+- Para chat entre sucursales, montamos un **Chat Hub** central y cada sucursal se conecta con Socket.IO (opcional).
 
-## 6) Multi-sucursal
-- Cada sucursal despliega este mismo proyecto con su propio `.env` y DB.
-- Si luego quieres **centralizar** reportes, podemos crear un **colector** que reciba (vía `POST`) el JSON de cada sucursal.
+## 6) Seguridad
+- Activa TLS con Nginx/Caddy si expones a Internet.
+- Añade auth con JWT para producción; aquí el demo usa `USER_NAME` localStorage.
+- Limita puertos por firewall / VPN site-to-site si es intranet.
 
-## 7) Seguridad
-- Endpoints de lectura son públicos dentro de la LAN de la sucursal (puedes activar CORS restringido).
-- Los endpoints de acciones (como `/api/email/daily`) piden `x-api-key` (configura `API_KEY` en `.env`).
-
-## 8) Personalización
-- Ajusta `REPORT_CRON_HOUR` y `REPORT_CRON_MINUTE` en `.env`.
-- Cambia los estilos en `public/styles.css` y el HTML en `public/index.html`.
-- Agrega endpoints para corte de caja, top productos, export CSV/PDF, etc.
-
----
-
-**Hecho para: App Farmacia / Consultorio / Laboratorio** — listo para crecer a Firestore/BigQuery cuando haya 5+ sucursales.
+## 7) Personalización rápida
+- Ajusta `REPORT_CRON_HOUR`/`MINUTE` en `.env`.
+- Cambia estilos en `public/styles.css`.
+- Agrega adjuntos en chat, permisos por rol, y notificaciones push (FCM).

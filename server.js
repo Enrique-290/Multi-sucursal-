@@ -19,11 +19,10 @@ const BRANCH_ID = process.env.BRANCH_ID || 'SUC-XX';
 const BRANCH_NAME = process.env.BRANCH_NAME || 'Sucursal';
 const TZ = 'America/Mexico_City';
 
-// ---- helpers
+// ===== Helpers
 function todayRangeLocal() {
   const start = dayjs().tz(TZ).startOf('day');
   const end = dayjs().tz(TZ).endOf('day');
-  // Para SQLite: usamos LIKE 'YYYY-MM-DD%'
   const dateLike = start.format('YYYY-MM-DD');
   return { start, end, dateLike, todayLocal: start.format('YYYY-MM-DD') };
 }
@@ -128,7 +127,7 @@ function requireApiKey(req, res, next) {
   next();
 }
 
-// ---- API
+// ---- API principal
 app.get('/api/health', (req,res)=>{
   res.json({ ok:true, branch: { id: BRANCH_ID, name: BRANCH_NAME } });
 });
@@ -155,6 +154,52 @@ app.post('/api/email/daily', requireApiKey, async (req,res)=>{
   }
 });
 
+// ====== CHAT (Socket.IO) ======
+import http from 'http';
+import { Server as IOServer } from 'socket.io';
+
+const server = http.createServer(app);
+const io = new IOServer(server);
+
+function id(prefix='ID'){
+  return prefix + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+}
+
+// API chat
+app.get('/api/chat/threads', (req,res)=>{
+  const rows = db.prepare('SELECT id,name,type FROM chat_threads WHERE branch_id=? ORDER BY name').all(BRANCH_ID);
+  res.json({ items: rows });
+});
+
+app.get('/api/chat/history/:thread_id', (req,res)=>{
+  const { thread_id } = req.params;
+  const rows = db.prepare('SELECT id,thread_id,user_id,user_name,body,created_at FROM chat_messages WHERE thread_id=? ORDER BY created_at ASC LIMIT 200').all(thread_id);
+  res.json({ items: rows });
+});
+
+io.on('connection', socket => {
+  socket.on('join', ({ thread_id })=>{
+    socket.join(thread_id);
+  });
+
+  socket.on('chat:send', payload => {
+    try {
+      const { thread_id, user_id, user_name, body } = payload || {};
+      if (!thread_id || !body) return;
+      // persist
+      const msgId = id('MSG');
+      const created = dayjs().tz(TZ).format('YYYY-MM-DD HH:mm:ss');
+      db.prepare('INSERT INTO chat_messages (id,thread_id,user_id,user_name,body,attachments_json,created_at) VALUES (?,?,?,?,?,?,?)')
+        .run(msgId, thread_id, user_id || 'U-ANON', user_name || 'Anónimo', body, null, created);
+      const msg = { id: msgId, thread_id, user_id, user_name, body, created_at: created };
+      // broadcast
+      io.to(thread_id).emit('chat:new', msg);
+    } catch (e) {
+      console.error('chat:send error:', e.message);
+    }
+  });
+});
+
 // ---- Cron diario (por defecto 21:00 hora CDMX)
 const cronHour = Number(process.env.REPORT_CRON_HOUR || 21);
 const cronMinute = Number(process.env.REPORT_CRON_MINUTE || 0);
@@ -169,6 +214,6 @@ cron.schedule(cronExp, async ()=>{
 }, { timezone: TZ });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=>{
+server.listen(PORT, ()=>{
   console.log(`Sucursal ${BRANCH_ID} — servidor en http://localhost:${PORT}`);
 });
